@@ -32,10 +32,14 @@ jobs:
           files: build/distributions/liferay-intellij-deployer-*.zip
           generate_release_notes: true
 
-      - name: Update updatePlugins.xml
+      - name: Update and commit updatePlugins.xml
         run: |
           VERSION=${{ steps.version.outputs.version }}
           ZIP_URL="https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/liferay-intellij-deployer-${VERSION}.zip"
+
+          git fetch origin master
+          git checkout master
+
           cat > updatePlugins.xml <<EOF
           <?xml version="1.0" encoding="UTF-8"?>
           <plugins>
@@ -49,10 +53,8 @@ jobs:
           </plugins>
           EOF
 
-      - name: Commit updatePlugins.xml
-        run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add updatePlugins.xml
-          git commit -m "chore: update updatePlugins.xml for ${{ github.ref_name }}"
-          git push origin HEAD:master
+          git diff --staged --quiet || git commit -m "chore: update updatePlugins.xml for ${{ github.ref_name }}"
+          git push origin master
