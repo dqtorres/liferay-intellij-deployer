@@ -1,0 +1,42 @@
+<idea-plugin>
+    <id>com.liferay.remote-deployer</id>
+    <name>Liferay Remote Deployer</name>
+    <vendor>Liferay</vendor>
+    <description>
+        Deploy Liferay artifacts to remote servers via SSH with cluster support.
+        Features: multi-server rolling/parallel deploys, OSGi cache cleanup, live log streaming.
+    </description>
+
+    <depends>com.intellij.modules.platform</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+
+        <applicationService
+            serviceImplementation="com.liferay.deployer.config.DeployerSettings"/>
+
+        <toolWindow
+            id="Liferay Deployer"
+            anchor="bottom"
+            secondary="false"
+            canCloseContents="false"
+            factoryClass="com.liferay.deployer.ui.DeployerToolWindowFactory"/>
+
+        <applicationConfigurable
+            parentId="tools"
+            instance="com.liferay.deployer.config.DeployerConfigurable"
+            id="com.liferay.deployer.config.DeployerConfigurable"
+            displayName="Liferay Remote Deployer"/>
+
+    </extensions>
+
+    <actions>
+        <action
+            id="com.liferay.deployer.actions.QuickDeployAction"
+            class="com.liferay.deployer.actions.QuickDeployAction"
+            text="Liferay: Quick Deploy"
+            description="Deploy artifacts to all enabled servers using saved configuration">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+            <keyboard-shortcut keymap="$default" first-keystroke="ctrl shift L"/>
+        </action>
+    </actions>
+</idea-plugin>

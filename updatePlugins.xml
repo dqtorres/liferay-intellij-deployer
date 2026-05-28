@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugins>
+    <plugin
+        id="com.liferay.remote-deployer"
+        url="https://github.com/OWNER/liferay-intellij-deployer/releases/download/v1.0.0/liferay-intellij-deployer-1.0.0.zip"
+        version="1.0.0">
+        <idea-version since-build="251"/>
+        <description>Deploy Liferay artifacts to remote servers via SSH.</description>
+    </plugin>
+</plugins>
