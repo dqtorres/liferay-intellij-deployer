@@ -352,7 +352,6 @@ class DeployerToolWindow {
     // ──────────────────────────────────────────────────────────────────────
 
     private fun deploy() {
-        // Sync server list, preserving selection
         val prevIds = (0 until serverCheckList.model.size)
             .filter  { idx -> serverCheckList.isItemSelected(idx) }
             .mapNotNull { idx -> serverCheckList.getItemAt(idx)?.id }
@@ -360,7 +359,7 @@ class DeployerToolWindow {
         refreshServers()
         (0 until serverCheckList.model.size).forEach { idx ->
             val item = serverCheckList.getItemAt(idx) ?: return@forEach
-            if (item.id !in prevIds) serverCheckList.setItemSelected(item, false)
+            serverCheckList.setItemSelected(item, item.id in prevIds)
         }
 
         val targets   = selectedServers()

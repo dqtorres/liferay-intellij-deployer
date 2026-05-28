@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.liferay"
-version = "1.0.0"
+version = "1.0.1"
 
 repositories {
     mavenCentral()
@@ -26,7 +26,7 @@ dependencies {
 intellijPlatform {
     pluginConfiguration {
         name = "Liferay Remote Deployer"
-        version = "1.0.0"
+        version = "1.0.1"
         description = """
             Deploy Liferay artifacts (.jar/.war) to remote servers via SSH.
             Supports cluster deployments (sequential rolling or parallel),
