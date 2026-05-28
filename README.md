@@ -18,7 +18,7 @@ Deploy artifacts (`.jar` / `.war`) a servidores Liferay remotos vía SSH directa
 1. En IntelliJ ve a **Settings → Plugins → ⚙ → Manage Plugin Repositories…**
 2. Añade la siguiente URL:
    ```
-   https://raw.githubusercontent.com/TU_USUARIO/liferay-intellij-deployer/main/updatePlugins.xml
+   https://raw.githubusercontent.com/dqtorres/liferay-intellij-deployer/main/updatePlugins.xml
    ```
 3. En el buscador de plugins escribe **Liferay Remote Deployer** e instálalo
 4. Reinicia IntelliJ
