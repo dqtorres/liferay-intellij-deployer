@@ -301,14 +301,21 @@ class DeployerConfigurable : Configurable {
         workingNginx.forEach { nginxListModel.addElement(it) }
     }
 
-    override fun isModified(): Boolean {
-        if (sourceFolderField.text != settings.defaultSourceFolder) return true
-        if (strategyCombo.selectedItem as String != settings.defaultStrategy) return true
-        if (workingEnvs.size != settings.environments.size) return true
-        if (workingServers.size != settings.servers.size) return true
-        if (workingNginx.size != settings.nginxServers.size) return true
-        return false
+    /** Snapshot of the current working copies as a State, for content comparison. */
+    private fun workingState(): DeployerSettings.State = DeployerSettings.State().also {
+        it.environments        = workingEnvs.map { e -> e.deepCopy() }.toMutableList()
+        it.servers             = workingServers.map { s -> s.deepCopy() }.toMutableList()
+        it.nginxServers        = workingNginx.map { n -> n.deepCopy() }.toMutableList()
+        it.defaultSourceFolder = sourceFolderField.text
+        it.defaultStrategy     = strategyCombo.selectedItem as String
+        // Not edited on this panel — mirror the saved value so it never skews the diff
+        it.selectedServerIds   = settings.state.selectedServerIds
     }
+
+    // Compare full content (not just list sizes) so editing a field inside an
+    // existing server/environment is detected and apply() actually runs.
+    override fun isModified(): Boolean =
+        ConfigExportImport.exportToXml(workingState()) != ConfigExportImport.exportToXml(settings.state)
 
     override fun apply() {
         settings.defaultSourceFolder = sourceFolderField.text

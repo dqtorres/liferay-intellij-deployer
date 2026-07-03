@@ -92,6 +92,19 @@ class DeployerToolWindow {
             }
         })
 
+        fileCheckList.addMouseListener(object : java.awt.event.MouseAdapter() {
+            override fun mousePressed(e: java.awt.event.MouseEvent)  = maybeShowContextMenu(e)
+            override fun mouseReleased(e: java.awt.event.MouseEvent) = maybeShowContextMenu(e)
+            private fun maybeShowContextMenu(e: java.awt.event.MouseEvent) {
+                if (!e.isPopupTrigger) return
+                val idx = fileCheckList.locationToIndex(e.point)
+                if (idx < 0) return
+                val file = fileCheckList.getItemAt(idx) ?: return
+                fileCheckList.selectedIndex = idx
+                buildArtifactContextMenu(file).show(fileCheckList, e.x, e.y)
+            }
+        })
+
         refreshServers()
         refreshFileList()
         return buildUI()
@@ -378,12 +391,30 @@ class DeployerToolWindow {
         }
 
         val strategy = if (strategyCombo.selectedIndex == 0) DeployStrategy.SEQUENTIAL else DeployStrategy.PARALLEL
+        runDeploy(artifacts, targets, strategy, persistSelection = true)
+    }
+
+    /**
+     * Shared deploy pipeline: confirm, then upload/restart on a pooled thread.
+     * Used by the Deploy button (all checked servers) and by the artifact
+     * context menu (a single file to a chosen environment/server).
+     */
+    private fun runDeploy(
+        artifacts: List<File>,
+        targets: List<ServerProfile>,
+        strategy: DeployStrategy,
+        persistSelection: Boolean
+    ) {
+        if (targets.isEmpty() || artifacts.isEmpty()) return
 
         val confirmed = DeployConfirmDialog(targets, settings.environments, artifacts, strategy).showAndGet()
         if (!confirmed) return
 
         settings.defaultSourceFolder = sourceFolderField.text.trim()
-        settings.selectedServerIds = targets.joinToString(",") { it.id }
+        if (persistSelection) settings.selectedServerIds = targets.joinToString(",") { it.id }
+
+        // Bring the first target's log tab to the front so output is visible
+        serverTabIndex[targets.first().id]?.let { logTabs.selectedIndex = it }
 
         stopAllTailing()
         deployButton.isEnabled = false
@@ -489,6 +520,56 @@ class DeployerToolWindow {
     }
 
     private fun clearLogs() = logAreas.values.forEach { it.text = "" }
+
+    // ──────────────────────────────────────────────────────────────────────
+    //  Artifact context menu — deploy a single file to a chosen target
+    // ──────────────────────────────────────────────────────────────────────
+
+    private fun buildArtifactContextMenu(file: File): JPopupMenu {
+        val menu = JPopupMenu()
+        menu.add(JMenuItem("Deploy \"${file.name}\" to…").also { it.isEnabled = false })
+        menu.addSeparator()
+
+        if (settings.servers.isEmpty()) {
+            menu.add(JMenuItem("No servers configured").also { it.isEnabled = false })
+            return menu
+        }
+
+        val strategy = if (strategyCombo.selectedIndex == 0)
+            DeployStrategy.SEQUENTIAL else DeployStrategy.PARALLEL
+
+        // One submenu per environment: "All <env>" plus each individual server
+        settings.environments.forEach { env ->
+            val envServers = settings.servers.filter { it.environmentId == env.id }
+            if (envServers.isEmpty()) return@forEach
+            menu.add(JMenu(env.name).apply {
+                icon = ColorDotIcon(env.awtColor(), 10)
+                add(JMenuItem("All ${env.name} (${envServers.size})").also { mi ->
+                    mi.addActionListener { runDeploy(listOf(file), envServers, strategy, persistSelection = false) }
+                })
+                addSeparator()
+                envServers.forEach { s ->
+                    add(JMenuItem("${s.name}  —  ${s.host}").also { mi ->
+                        mi.addActionListener { runDeploy(listOf(file), listOf(s), strategy, persistSelection = false) }
+                    })
+                }
+            })
+        }
+
+        // Servers not assigned to any environment
+        val orphans = settings.servers.filter { s -> settings.environments.none { it.id == s.environmentId } }
+        if (orphans.isNotEmpty()) {
+            menu.add(JMenu("— No environment —").apply {
+                orphans.forEach { s ->
+                    add(JMenuItem("${s.name}  —  ${s.host}").also { mi ->
+                        mi.addActionListener { runDeploy(listOf(file), listOf(s), strategy, persistSelection = false) }
+                    })
+                }
+            })
+        }
+
+        return menu
+    }
 
     // ──────────────────────────────────────────────────────────────────────
     //  Server context menu
